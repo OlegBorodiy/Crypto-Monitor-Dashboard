@@ -1,0 +1,186 @@
+{
+  "title": "📊 Crypto Monitor",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "exchange",
+        "type": "query",
+        "datasource": "PostgreSQL",
+        "refresh": 1,
+        "query": "SELECT DISTINCT exchange FROM balances",
+        "includeAll": true
+      },
+      {
+        "name": "subaccount",
+        "type": "query",
+        "datasource": "PostgreSQL",
+        "refresh": 1,
+        "query": "SELECT DISTINCT subaccount FROM balances",
+        "includeAll": true
+      },
+      {
+        "name": "symbol",
+        "type": "query",
+        "datasource": "PostgreSQL",
+        "refresh": 1,
+        "query": "SELECT DISTINCT symbol FROM trades",
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Base Token Balance",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", balance FROM balances\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND token = split_part('${symbol}', '/', 1)\nORDER BY time"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "lines": true,
+      "nullPointMode": "connected"
+    },
+    {
+      "type": "graph",
+      "title": "Quote Token Balance",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "refId": "B",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", balance FROM balances\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND token = split_part('${symbol}', '/', 2)\nORDER BY time"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "lines": true,
+      "nullPointMode": "connected"
+    },
+    {
+        "type": "stat",
+        "title": "Total Trades (Unique)",
+        "datasource": "PostgreSQL",
+        "targets": [
+            {
+                "refId": "C",
+                "format": "table",
+                "rawSql": "SELECT COUNT(*) AS total_trades FROM trades\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND symbol = '${symbol}'"
+            }
+        ],
+        "gridPos": {
+            "h": 4,
+            "w": 12,
+            "x": 0,
+            "y": 16
+        },
+        "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+            "calcs": [
+                "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+        },
+        "fieldConfig": {
+            "defaults": {
+            "mappings": [],
+            "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                {
+                    "color": "green"
+                },
+                {
+                    "color": "red",
+                    "value": 80
+                }
+                ]
+            }
+            },
+            "overrides": []
+        },
+        "pluginVersion": "11.6.0"
+    },
+    {
+      "type": "stat",
+      "title": "Total Fees",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "refId": "D",
+          "format": "table",
+          "rawSql": "SELECT SUM(CASE WHEN fee_token IN ('USDT', 'USDC') THEN fee ELSE fee * price END) AS total_fee\nFROM trades\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND symbol = '${symbol}'"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 16,
+        "y": 16
+      }
+    },
+    {
+        "type": "graph",
+        "title": "Trade Volume",
+        "datasource": "PostgreSQL",
+        "targets": [
+          {
+            "refId": "E",
+            "format": "time_series",
+            "rawSql": "SELECT time AS \"time\", price * quantity AS volume FROM trades\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND symbol = '${symbol}'\nORDER BY time"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        },
+        "lines": true,
+        "nullPointMode": "connected"
+    },
+    {
+      "type": "table",
+      "title": "Trade History",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "refId": "F",
+          "format": "table",
+          "rawSql": "SELECT time, symbol, side, price, quantity, fee, fee_token\nFROM trades\nWHERE $__timeFilter(time)\nAND exchange ~ '${exchange:regex}'\nAND subaccount ~ '${subaccount:regex}'\nAND symbol = '${symbol}'\nORDER BY time DESC"
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      }
+    }
+  ]
+}
