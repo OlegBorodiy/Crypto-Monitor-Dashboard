@@ -20,7 +20,7 @@ A real-time, customizable crypto dashboard built with **Grafana**, **PostgreSQL*
 - Python (data collection)
 - PostgreSQL + TimescaleDB
 - Grafana 11+
-- Bitget Spot API (v2)
+- CEX's API
 
 ## 📸 Preview
 
